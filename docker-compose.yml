@@ -1,0 +1,42 @@
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - 16614:16614
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: srcstats
+      MONGO_INITDB_ROOT_PASSWORD: Notaproductionpasswordjustadevenvironmentpassword!
+      MONGO_INITDB_DATABASE: srcstats
+  sql:
+    image: mcr.microsoft.com/mssql/server:latest
+    ports:
+      - 1738:1738
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: Notaproductionpasswordjustadevenvironmentpassword!
+  fetch:
+    image: ghcr.io/srcstats/src-webhook-fetcher
+    environment:
+      SRC_WEBHOOK_MONGODB_CONNECTION_STRING: mongodb://srcstats:Notaproductionpasswordjustadevenvironmentpassword!@mongodb:27017
+      SRC_WEBHOOK_DATABASE: srcstats
+      SRC_WEBHOOK_COLLECTION: webhook-last-runs
+      SRC_WEBHOOK_RUN_URI: http://sender:8080/api/SendWebhook
+    entrypoint: ["/bin/sh", "-c" , "sleep 20 && /fetch"]
+    restart: always
+  sender:
+    image: ghcr.io/srcstats/src-webhook-sender
+    ports:
+      - 8080:8080
+    environment:
+      SRC_WEBHOOK_MONGODB_CONNECTION_STRING: mongodb://srcstats:Notaproductionpasswordjustadevenvironmentpassword!@mongodb:27017
+      SRC_WEBHOOK_DATABASE: srcstats
+      SRC_WEBHOOK_COLLECTION: webhook-list
+  site:
+    image: ghcr.io/srcstats/srcstats
+    ports:
+      - 80:80
+    environment:
+      SRC_STATS_SQL_CONNECTION_STRING: Server=sql,1433;Database=SRCStats;User=sa;Password=Notaproductionpasswordjustadevenvironmentpassword!
+      SRC_STATS_MONGODB_CONNECTION_STRING: mongodb://srcstats:Notaproductionpasswordjustadevenvironmentpassword!@mongodb:27017
+    command: ["dotnet", "ef", "database update"]
+    restart: on-failure
